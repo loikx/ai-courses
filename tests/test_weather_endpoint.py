@@ -10,7 +10,7 @@ from src.weather_client import CityNotFound, WeatherProviderError
 from src.database import get_db
 from src.db_models import Base
 
-# Создание тестовой БД в памяти
+# Создание тестовой файловой SQLite БД
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
@@ -22,8 +22,8 @@ Base.metadata.create_all(bind=engine)
 
 def override_get_db():
     """Override get_db для использования тестовой БД"""
+    db = TestingSessionLocal()
     try:
-        db = TestingSessionLocal()
         yield db
     finally:
         db.close()
