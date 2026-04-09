@@ -304,8 +304,8 @@ class TestGetSubscriptionsEndpoint:
 class TestWeatherClientIntegration:
     """Интеграционные тесты"""
     
-    @patch('src.weather_client.httpx.Client.get')
-    def test_weather_client_success(self, mock_get):
+    @patch('src.weather_client.httpx.Client')
+    def test_weather_client_success(self, mock_client_class):
         """Успешный запрос к API"""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -314,7 +314,8 @@ class TestWeatherClientIntegration:
             "weather": [{"main": "Cloudy"}],
             "wind": {"speed": 5.2}
         }
-        mock_get.return_value = mock_response
+        mock_client = mock_client_class.return_value.__enter__.return_value
+        mock_client.get.return_value = mock_response
         
         from src.weather_client import WeatherClient
         client_instance = WeatherClient(api_key="test_key")
@@ -323,29 +324,55 @@ class TestWeatherClientIntegration:
         assert result.city == "London"
         assert result.temp == 15.5
         assert result.humidity == 70
+        mock_client.get.assert_called_once_with(
+            client_instance.base_url,
+            params={
+                "q": "London",
+                "appid": "test_key",
+                "units": "metric",
+            },
+        )
     
-    @patch('src.weather_client.httpx.Client.get')
-    def test_weather_client_city_not_found(self, mock_get):
+    @patch('src.weather_client.httpx.Client')
+    def test_weather_client_city_not_found(self, mock_client_class):
         """Город не найден в API"""
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mock_get.return_value = mock_response
+        mock_client = mock_client_class.return_value.__enter__.return_value
+        mock_client.get.return_value = mock_response
         
         from src.weather_client import WeatherClient
         client_instance = WeatherClient(api_key="test_key")
         
         with pytest.raises(CityNotFound):
             client_instance.get_weather("InvalidCity")
+        mock_client.get.assert_called_once_with(
+            client_instance.base_url,
+            params={
+                "q": "InvalidCity",
+                "appid": "test_key",
+                "units": "metric",
+            },
+        )
     
-    @patch('src.weather_client.httpx.Client.get')
-    def test_weather_client_api_error(self, mock_get):
+    @patch('src.weather_client.httpx.Client')
+    def test_weather_client_api_error(self, mock_client_class):
         """Ошибка API"""
         mock_response = MagicMock()
         mock_response.status_code = 500
-        mock_get.return_value = mock_response
+        mock_client = mock_client_class.return_value.__enter__.return_value
+        mock_client.get.return_value = mock_response
         
         from src.weather_client import WeatherClient
         client_instance = WeatherClient(api_key="test_key")
         
         with pytest.raises(WeatherProviderError):
             client_instance.get_weather("London")
+        mock_client.get.assert_called_once_with(
+            client_instance.base_url,
+            params={
+                "q": "London",
+                "appid": "test_key",
+                "units": "metric",
+            },
+        )
