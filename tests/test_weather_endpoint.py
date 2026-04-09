@@ -147,10 +147,10 @@ class TestHealthCheck:
 
 
 class TestSubscribeEndpoint:
-    """Тесты POST /subribe/{city}"""
+    """Тесты POST /subscribe/{city}"""
 
     @patch('src.main.weather_client.get_weather')
-    def test_subribe_success(self, mock_get_weather):
+    def test_subscribe_success(self, mock_get_weather):
         """Успешная подписка на город"""
         mock_get_weather.return_value = WeatherData(
             city="London",
@@ -162,7 +162,7 @@ class TestSubscribeEndpoint:
             fetched_at=datetime.now()
         )
 
-        response = client.post("/subribe/London", json={"email": "user@example.com"})
+        response = client.post("/subscribe/London", json={"email": "user@example.com"})
         assert response.status_code == 201
 
         data = response.json()
@@ -173,7 +173,7 @@ class TestSubscribeEndpoint:
         assert data["error"] is None
 
     @patch('src.main.weather_client.get_weather')
-    def test_subribe_duplicate_409(self, mock_get_weather):
+    def test_subscribe_duplicate_409(self, mock_get_weather):
         """Повторная подписка на тот же город и email возвращает 409"""
         mock_get_weather.return_value = WeatherData(
             city="London",
@@ -185,25 +185,25 @@ class TestSubscribeEndpoint:
             fetched_at=datetime.now()
         )
 
-        first_response = client.post("/subribe/London", json={"email": "user@example.com"})
-        second_response = client.post("/subribe/London", json={"email": "user@example.com"})
+        first_response = client.post("/subscribe/London", json={"email": "user@example.com"})
+        second_response = client.post("/subscribe/London", json={"email": "user@example.com"})
 
         assert first_response.status_code == 201
         assert second_response.status_code == 409
         assert "already exists" in second_response.json()["detail"].lower()
         assert mock_get_weather.call_count == 1
 
-    def test_subribe_invalid_email_422(self):
+    def test_subscribe_invalid_email_422(self):
         """Некорректный email в запросе"""
-        response = client.post("/subribe/London", json={"email": "invalid-email"})
+        response = client.post("/subscribe/London", json={"email": "invalid-email"})
         assert response.status_code == 422
 
     @patch('src.main.weather_client.get_weather')
-    def test_subribe_city_not_found_400(self, mock_get_weather):
+    def test_subscribe_city_not_found_400(self, mock_get_weather):
         """Подписка на несуществующий город"""
         mock_get_weather.side_effect = CityNotFound("City 'Atlantis' not found")
 
-        response = client.post("/subribe/Atlantis", json={"email": "user@example.com"})
+        response = client.post("/subscribe/Atlantis", json={"email": "user@example.com"})
         assert response.status_code == 400
         assert "not found" in response.json()["detail"].lower()
 
@@ -234,8 +234,8 @@ class TestGetSubscriptionsEndpoint:
         )
         
         # Создаём подписки
-        client.post("/subribe/London", json={"email": "user1@example.com"})
-        client.post("/subribe/Paris", json={"email": "user2@example.com"})
+        client.post("/subscribe/London", json={"email": "user1@example.com"})
+        client.post("/subscribe/Paris", json={"email": "user2@example.com"})
         
         # Получаем список
         response = client.get("/subscriptions")
@@ -259,7 +259,7 @@ class TestGetSubscriptionsEndpoint:
         )
         
         # Создаём подписку
-        sub_response = client.post("/subribe/London", json={"email": "user@example.com"})
+        sub_response = client.post("/subscribe/London", json={"email": "user@example.com"})
         sub_id = sub_response.json()["data"]["id"]
         
         # Проверяем, что она в списке
@@ -287,7 +287,7 @@ class TestGetSubscriptionsEndpoint:
         )
         
         # Создаём подписку
-        client.post("/subribe/London", json={"email": "user@example.com"})
+        client.post("/subscribe/London", json={"email": "user@example.com"})
         
         # Получаем список
         response = client.get("/subscriptions")

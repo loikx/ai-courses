@@ -17,6 +17,8 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
+
     # Создание таблицы subscriptions
     op.create_table(
         'subscriptions',

@@ -17,8 +17,7 @@ from .models import (
     SubscriptionsListResponse,
 )
 from .weather_client import WeatherClient, CityNotFound, WeatherProviderError
-from .database import get_db, engine
-from .db_models import Base
+from .database import get_db
 from .repository import SubscriptionRepository
 
 # Логирование
@@ -32,7 +31,13 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     """Настройки приложения"""
     openweather_api_key: str = os.getenv("OPENWEATHER_API_KEY", "")
-    mock_history_enabled: bool = os.getenv("MOCK_HISTORY_ENABLED", "false").lower() == "true"
+    openweather_subscription_tier: str = os.getenv(
+        "OPENWEATHER_SUBSCRIPTION_TIER",
+        "unknown",
+    )
+    mock_history_enabled: bool = (
+        os.getenv("MOCK_HISTORY_ENABLED", "false").lower() == "true"
+    )
     
     class Config:
         env_file = ".env"
@@ -40,14 +45,15 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-logger.info(f"Application started with API key: {settings.openweather_api_key}")
+logger.info(
+    "Application started; OpenWeather API key configured=%s",
+    bool(settings.openweather_api_key),
+)
 weather_client = WeatherClient(
     api_key=settings.openweather_api_key,
     mock_history_enabled=settings.mock_history_enabled,
+    subscription_tier=settings.openweather_subscription_tier,
 )
-
-# Создание таблиц при запуске приложения
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="WeatherApp",
@@ -162,7 +168,7 @@ async def get_weather_history(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.post("/subribe/{city}", response_model=SubscriptionResponse, status_code=201, tags=["Subscriptions"])
+@app.post("/subscribe/{city}", response_model=SubscriptionResponse, status_code=201, tags=["Subscriptions"])
 async def subscribe_to_city(
     city: str = Path(..., min_length=1, max_length=100, description="Название города"),
     request: SubscribeRequest = Body(...),
@@ -173,7 +179,7 @@ async def subscribe_to_city(
 
     Подписки хранятся в PostgreSQL.
     """
-    logger.info(f"POST /subribe/{city}")
+    logger.info(f"POST /subscribe/{city}")
 
     city_normalized = " ".join(city.strip().split())
     repository = SubscriptionRepository(db)
@@ -183,7 +189,7 @@ async def subscribe_to_city(
         city=city_normalized,
     )
     if existing_subscription is not None:
-        logger.error(f"Subscription already exists: {request.email}:{city_normalized}")
+        logger.error("Subscription already exists for city=%s", city_normalized)
         raise HTTPException(status_code=409, detail="Subscription already exists")
 
     try:
@@ -207,7 +213,7 @@ async def subscribe_to_city(
         return SubscriptionResponse(success=True, data=subscription, error=None)
     
     except IntegrityError:
-        logger.error(f"Subscription already exists: {request.email}:{city_normalized}")
+        logger.error("Subscription already exists for city=%s", city_normalized)
         raise HTTPException(status_code=409, detail="Subscription already exists")
     
     except Exception as e:

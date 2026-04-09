@@ -17,7 +17,7 @@ docker compose up -d postgres
 ```bash
 cd practices/practice_03
 alembic upgrade head
-cd /Users/loikx/labs/itmo-practice-loikx
+cd "$(git rev-parse --show-toplevel)"
 ```
 
 ## 3. Start the API

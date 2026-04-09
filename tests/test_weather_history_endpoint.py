@@ -73,8 +73,16 @@ def test_get_weather_history_returns_sorted_multi_day_payload(
         date(2026, 3, 22),
     )
 
-    stored_records = db_session.query(StoredHistoricalWeather).order_by(
-        StoredHistoricalWeather.date.asc()
+    stored_records = (
+        db_session.query(StoredHistoricalWeather)
+        .filter(StoredHistoricalWeather.city == "Moscow")
+        .filter(
+            StoredHistoricalWeather.date.between(
+                date(2026, 3, 20),
+                date(2026, 3, 22),
+            )
+        )
+        .order_by(StoredHistoricalWeather.date.asc())
     )
     assert stored_records.count() == 3
 
@@ -137,7 +145,15 @@ def test_get_weather_history_supports_mock_mode_without_paid_provider(
         "MockRain",
     ]
 
-    stored_records = db_session.query(StoredHistoricalWeather).order_by(
-        StoredHistoricalWeather.date.asc()
+    stored_records = (
+        db_session.query(StoredHistoricalWeather)
+        .filter(StoredHistoricalWeather.city == "Moscow")
+        .filter(
+            StoredHistoricalWeather.date.between(
+                date(2026, 3, 20),
+                date(2026, 3, 22),
+            )
+        )
+        .order_by(StoredHistoricalWeather.date.asc())
     )
     assert stored_records.count() == 3

@@ -103,9 +103,10 @@ class SubscriptionRepository:
             return None
         
         self.db.delete(subscription)
+        deleted_subscription = self._to_pydantic(subscription)
         self.db.commit()
         
-        return self._to_pydantic(subscription)
+        return deleted_subscription
 
     def get_by_email_and_city(self, email: str, city: str) -> SubscriptionData | None:
         """

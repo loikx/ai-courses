@@ -219,8 +219,6 @@ class MigrationChecker:
         except SQLAlchemyError as e:
             self.print_check("CRUD операции", False, str(e))
             return False
-        finally:
-            self.session.close()
 
     def check_unique_constraint(self) -> bool:
         """Проверить работу unique constraint."""
@@ -263,8 +261,6 @@ class MigrationChecker:
         except SQLAlchemyError as e:
             self.print_check("Unique constraint работает", False, str(e))
             return False
-        finally:
-            self.session.close()
 
     def run_all_checks(self) -> bool:
         """Запустить все проверки."""
@@ -297,6 +293,8 @@ class MigrationChecker:
         except Exception as e:
             print(f"\n❌ Критическая ошибка: {e}")
             return False
+        finally:
+            self.session.close()
 
 
 def main():

@@ -147,7 +147,51 @@ REFLECTION = {
 # ЭКСПОРТ
 # =================================================================================================
 
-def export_report():
+def _validate_report_sources() -> None:
+    """Validate report source data before exporting artifacts."""
+    errors: list[str] = []
+
+    if len(CONTEXT_LOGS) < 3:
+        errors.append(
+            f"CONTEXT_LOGS: expected at least 3 entries, found {len(CONTEXT_LOGS)}"
+        )
+
+    if len(RULES_LOGS) < 3:
+        errors.append(
+            f"RULES_LOGS: expected at least 3 entries, found {len(RULES_LOGS)}"
+        )
+
+    if len(MULTICHAT_LOGS) < 3:
+        errors.append(
+            f"MULTICHAT_LOGS: expected at least 3 entries, found {len(MULTICHAT_LOGS)}"
+        )
+
+    required_checklist_items = [
+        "models_created",
+        "cursorrules_created",
+        "health_endpoint",
+        "post_subscribe",
+        "get_subscriptions",
+        "delete_subscribe",
+    ]
+    incomplete_checklist_items = [
+        item
+        for item in required_checklist_items
+        if IMPLEMENTATION_CHECKLIST.get(item) is not True
+    ]
+    if incomplete_checklist_items:
+        errors.append(
+            "IMPLEMENTATION_CHECKLIST: missing or incomplete items: "
+            + ", ".join(incomplete_checklist_items)
+        )
+
+    if errors:
+        raise ValueError("Cannot export report: " + "; ".join(errors))
+
+
+def export_report() -> None:
+    _validate_report_sources()
+
     report = f"# Отчет по Практике 3: {STUDENT_INFO['full_name']}\n\n"
 
     report += "## 1. Журнал управления контекстом\n\n"

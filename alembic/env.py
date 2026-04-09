@@ -4,12 +4,14 @@
 Поддерживает как offline, так и online режимы миграций.
 """
 
+import os
 from logging.config import fileConfig
+from sys import path as sys_path
+
+import sqlalchemy as sa
+from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from alembic import context
-import os
-from sys import path as sys_path
 
 # Добавляем путь к src для импорта моделей
 sys_path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -39,6 +41,23 @@ target_metadata = Base.metadata
 # ... etc.
 
 
+def get_required_database_url() -> str:
+    """Return DATABASE_URL or fail before Alembic connects."""
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable must be set before running "
+            "Alembic migrations"
+        )
+    return database_url
+
+
+def ensure_pgcrypto_extension(connection) -> None:
+    """Provision pgcrypto for gen_random_uuid() on PostgreSQL connections."""
+    if connection.dialect.name == "postgresql":
+        connection.execute(sa.text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+
+
 def run_migrations_offline() -> None:
     """Запуск миграций в 'offline' режиме.
 
@@ -48,10 +67,7 @@ def run_migrations_offline() -> None:
     Вызовы context.execute() выводят SQL в stdout.
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = os.getenv(
-        "DATABASE_URL",
-        "postgresql://weather_user:weather_password@localhost:5432/weather_db"
-    )
+    configuration["sqlalchemy.url"] = get_required_database_url()
 
     context.configure(
         url=configuration["sqlalchemy.url"],
@@ -76,10 +92,7 @@ def run_migrations_online() -> None:
     - Использование NullPool для избежания проблем с соединениями
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = os.getenv(
-        "DATABASE_URL",
-        "postgresql://weather_user:weather_password@localhost:5432/weather_db"
-    )
+    configuration["sqlalchemy.url"] = get_required_database_url()
 
     connectable = engine_from_config(
         configuration,
@@ -88,6 +101,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        ensure_pgcrypto_extension(connection)
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
