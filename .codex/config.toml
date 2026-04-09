@@ -1,0 +1,37 @@
+[agents]
+max_threads = 6
+max_depth = 1
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.context7.env]
+DEFAULT_MINIMUM_TOKENS = ""
+
+[mcp_servers.sequentialthinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[mcp_servers."memory-bank"]
+command = "npx"
+args = ["-y", "@allpepper/memory-bank-mcp"]
+
+[mcp_servers.postgres]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+
+[mcp_servers."memory-bank".tools.memory_bank_read]
+approval_mode = "approve"
+
+[mcp_servers."memory-bank".tools.memory_bank_write]
+approval_mode = "approve"
+
+[mcp_servers."memory-bank".tools.memory_bank_update]
+approval_mode = "approve"
+
+[mcp_servers."memory-bank".tools.list_projects]
+approval_mode = "approve"
+
+[mcp_servers."memory-bank".tools.list_project_files]
+approval_mode = "approve"
