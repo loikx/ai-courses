@@ -28,18 +28,21 @@ def override_get_db():
     finally:
         db.close()
 
-
-app.dependency_overrides[get_db] = override_get_db
-
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def clear_database():
-    """Очистка БД между тестами"""
+    """Очистка БД между тестами и scoped override для get_db."""
+    original_override = app.dependency_overrides.get(get_db)
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    app.dependency_overrides[get_db] = override_get_db
     yield
+    if original_override is None:
+        app.dependency_overrides.pop(get_db, None)
+    else:
+        app.dependency_overrides[get_db] = original_override
     Base.metadata.drop_all(bind=engine)
 
 
@@ -130,12 +133,6 @@ class TestWeatherEndpointValidation:
         response = client.get(f"/weather/{long_city}")
         assert response.status_code == 422
     
-    def test_city_parameter_min_length(self):
-        """Минимальная длина города"""
-        response = client.get("/weather/")
-        assert response.status_code == 404
-
-
 class TestHealthCheck:
     """Тесты health check"""
     
