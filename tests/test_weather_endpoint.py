@@ -72,7 +72,7 @@ class TestWeatherEndpointSuccess:
     
     @patch('src.main.weather_client.get_weather')
     def test_get_weather_with_spaces(self, mock_get_weather):
-        """Получение погоды с пробелами в названии"""
+        """Получение погоды c пробелами в названии"""
         mock_get_weather.return_value = WeatherData(
             city="New York",
             temp=20.0,
@@ -219,7 +219,7 @@ class TestGetSubscriptionsEndpoint:
     
     @patch('src.main.weather_client.get_weather')
     def test_get_subscriptions_with_data(self, mock_get_weather):
-        """Получение списка с подписками"""
+        """Получение списка c подписками"""
         mock_get_weather.return_value = WeatherData(
             city="London",
             temp=15.5,
