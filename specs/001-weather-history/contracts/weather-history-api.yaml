@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: Weather History Contract
+  version: 1.0.0
+paths:
+  /weather/{city}/history:
+    get:
+      summary: Get weather history for a city and date range
+      parameters:
+        - name: city
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Historical weather records returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                  - error
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required:
+                      - city
+                      - start_date
+                      - end_date
+                      - records
+                    properties:
+                      city:
+                        type: string
+                      start_date:
+                        type: string
+                        format: date
+                      end_date:
+                        type: string
+                        format: date
+                      records:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - date
+                            - city
+                            - temp
+                            - condition
+                            - humidity
+                            - wind_speed
+                            - pressure
+                            - fetched_at
+                            - source
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            city:
+                              type: string
+                            temp:
+                              type: number
+                            condition:
+                              type: string
+                            humidity:
+                              type: integer
+                            wind_speed:
+                              type: number
+                            pressure:
+                              type: integer
+                            fetched_at:
+                              type: string
+                              format: date-time
+                            source:
+                              type: string
+                              enum: [cache, provider]
+                  error:
+                    type: string
+                    nullable: true
+        "400":
+          description: City not found
+        "422":
+          description: Invalid date format or invalid date range
+        "503":
+          description: External weather provider unavailable
+        "500":
+          description: Unexpected internal error
